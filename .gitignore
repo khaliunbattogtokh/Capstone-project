@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+.venv/
+env/
+venv/
+
+# Data files (large or sensitive)
+*.csv
+*.xlsx
+*.xls
+
+# PDF outputs (generated files)
+Output/
+
+# Text clippings
+*.textClipping
