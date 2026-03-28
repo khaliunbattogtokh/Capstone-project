@@ -26,3 +26,14 @@ Output/
 
 # Text clippings
 *.textClipping
+
+# Claude AI session files
+.claude/
+
+# Images and large binary files
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.docx
+*.pptx
