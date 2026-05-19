@@ -30,10 +30,11 @@ Output/
 # Claude AI session files
 .claude/
 
-# Images and large binary files
+# Images and large binary files (except fig/ folder)
 *.png
 *.jpg
 *.jpeg
+!fig/*.png
 *.pdf
 *.docx
 *.pptx
