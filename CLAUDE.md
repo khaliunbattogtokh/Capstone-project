@@ -1,64 +1,94 @@
-# ECON696 – Independent Study
+# ECON696 – Capstone: Did ChatGPT Reshape Entry-Level Job Postings?
 
 ## Research Question
 
-Did AI (specifically GPT-4) reduce entry-level hiring in highly AI-exposed occupations after ChatGPT launched in October 2022?
+Did AI (specifically GPT-4 / ChatGPT) reduce entry-level hiring in highly AI-exposed occupations after ChatGPT launched in November 2022?
 
 ## Project Structure
 
-```         
+```
 ECON696/
 ├── Code/
-│   ├── AI_exposure_occs.ipynb         # Main analysis: entry-level share × AI exposure
-│   ├── AI_exposure_by_job_sep12.ipynb # AI exposure measure construction from job postings
-│   └── AI exposure by job, occ.ipynb  # Earlier exploratory version
+│   ├── ai_comments.ipynb              # PRIMARY notebook — full end-to-end pipeline
+│   ├── Anthropic_exposure_index.ipynb # Anthropic observed_exposure measure construction
+│   └── archive/
+│       ├── AI_exposure_occs.ipynb     # OLD — 3 known bugs, stale results, do not use
+│       ├── AI_exposure_by_job_sep12.ipynb
+│       └── AI exposure by job, occ.ipynb
+├── fig/                               # All output figures (PNGs)
 ├── Output/
-│   └── ai_exposed_occs.xlsx           # Occupation-level AI exposure output
+│   └── ai_exposed_occs.xlsx
+├── updated code/
+│   ├── postings_jolts.ipynb           # Robustness controls: JOLTS, demand shocks
+│   └── data/
+│       └── national_M20XX_dl.xlsx     # BLS OEWS national employment & wages
 ├── papers/                            # Reference papers
-├── writeup/                           # Paper draft
+├── writeup/
+│   ├── paper_draft_final_v2.qmd       # Final paper (Quarto)
+│   ├── paper_draft_final_v2.html      # Rendered paper — submitted to Canvas
+│   └── slides_econ.qmd / .html        # Presentation slides (presented May 2026)
 ├── ai_exposure.csv                    # AI exposure scores by O*NET SOC code
-└── occupation_automation_augmentation_data.csv
+└── occupation_automation_augmentation_data.csv  # Brynjolfsson et al. automation/augmentation index
 ```
+
+## Primary Notebook: `Code/ai_comments.ipynb`
+
+Self-contained end-to-end pipeline (replaces the old buggy `AI_exposure_occs.ipynb`):
+
+1. Loads AI exposure data + queries Snowflake for postings by YOE bucket
+2. Validates against BLS JOLTS
+3. Builds descriptive charts (SWD by YOE, Finance Analysts by YOE, overall postings, canaries)
+4. Runs full DiD regression pipeline (Steps 1–7b) + robustness checks
+5. Runs event study (monthly + annual)
 
 ## Data Sources
 
--   **`ai_exposure.csv`** — Occupation-level AI exposure scores (GPT-4 alpha/beta/gamma, human raters, automation) keyed by O\*NET SOC code. `gpt4_beta` is the primary exposure measure.
--   **Snowflake (EMSI job postings)** — `emsi.us.postings`, 2014–2024. Requires `SNOWFLAKE_USER` and `SNOWFLAKE_PASSWORD` env vars. Account: `avb99459.us-east-1`, warehouse: `OPPORTUNITYATWORK_WH`.
--   **Google Drive** — Working directory is mounted at `~/Library/CloudStorage/GoogleDrive-{user}@opportunityatwork.org/Shared drives/Insights`.
+- **`ai_exposure.csv`** — Occupation-level AI exposure scores (GPT-4 alpha/beta/gamma). Key column: `occ_code` (7-char SOC). Primary measure: `gpt4_beta`.
+- **`occupation_automation_augmentation_data.csv`** — Brynjolfsson, Chandar & Chen (2025) automation/augmentation index. SOC column: `O*NET-SOC Code` (trim to 7 chars with `str[:7]`).
+- **Snowflake (Lightcast job postings)** — `emsi.us.postings`, 2014–2024. Account: `avb99459.us-east-1`, warehouse: `OPPORTUNITYATWORK_WH`. Requires `SNOWFLAKE_USER` and `SNOWFLAKE_PASSWORD` env vars.
+- **BLS JOLTS** — Total nonfarm job openings (NSA), stored in `updated code/SeriesReport-*.xlsx`. Read with `skiprows=13, nrows=11`.
+- **BLS OEWS** — National occupational employment & wages, annual 2019–2024. Stored in `updated code/data/national_M20XX_dl.xlsx`. Filter to `o_group == 'detailed'`.
 
 ## Key Variables
 
--   **`entry_level_pct`** — Share of job postings that are entry-level (≤1 year experience OR Junior seniority with no YOE listed, and ≤Bachelor's degree)
--   **`gpt4_beta`** — GPT-4 AI exposure score for the occupation (0–1)
--   **`entry_sa`** — Seasonally adjusted entry-level share (month dummies removed)
--   **`exposure_group`** — Tertile bin of `gpt4_beta`: Low / Medium / High
--   **`w_2021`** — Occupation weight = share of total 2021 postings (used for weighted averages)
--   **Event date** — October 2022 (ChatGPT launch), indexed to 100
+- **`entry_level_pct`** — Share of postings that are entry-level: (`min_years_experience ≤ 2` OR `job_seniority_name = 'Junior' AND min_years_experience IS NULL`) AND `min_edulevels_name` ≤ Bachelor's Degree.
+- **`gpt4_beta`** — GPT-4 AI exposure score (0–1), time-invariant. Primary treatment measure.
+- **`observed_exposure`** — Anthropic Economic Index: actual Claude usage patterns by occupation. Robustness treatment measure. Corr with `gpt4_beta`: r = 0.638, Spearman ρ = 0.699.
+- **`entry_sa`** — Seasonally adjusted entry-level share (month dummies removed via WLS).
+- **`w_2021`** — Occupation weight = share of total 2021 postings.
+- **`rate_sensitivity`** — Pre-period OLS coefficient: occupation's monthly posting % change regressed on ΔFFR (2020–2022). Computed for 729 occupations.
+- **Event reference month** — October 2022 (last clean pre-treatment month; ChatGPT launched Nov 30, 2022, following Brynjolfsson et al. 2025 convention).
 
-## Analysis Pipeline
+## Final DiD Results (ai_comments.ipynb, May 14 2026)
 
-1.  Build AI exposure measure from EMSI skills data (`AI_exposure_by_job_sep12.ipynb`)
-2.  Query monthly entry-level posting shares by occupation from Snowflake
-3.  Merge on occupation code (SOC 2021 5-digit)
-4.  Seasonally adjust entry-level share (OLS on month dummies)
-5.  Compute 2021 occupation weights
-6.  Bin occupations into Low/Medium/High AI exposure tertiles
-7.  Compute weighted monthly averages per group, index to Oct 2022 = 100
-8.  Event-study regression: `index ~ C(event_time) + C(event_time):C(exposure_group)` (HC1 SEs)
-9.  DiD regression: `indexed_share ~ post * gpt4_beta + C(OCC_CODE) + C(ym_str)`, WLS weighted by `w_2021_pct`, SEs clustered by occupation
+**Entry-level definition:** YOE ≤ 2 OR (Junior + NULL YOE), edu ≤ Bachelor's  
+**Y:** `entry_sa` (seasonally adjusted %)  
+**Model:** Two-way FE (occupation + time), WLS (2021 weights), SEs clustered by occupation
 
-## Professor Feedback
+| Spec | Treatment | β | SE | p | 95% CI | N obs | N occ |
+|---|---|---|---|---|---|---|---|
+| (1) Main DiD | `gpt4_beta` | −1.729 | 0.898 | 0.054 | [−3.49, 0.03] | 45,436 | 733 |
+| (2) + rate sensitivity | `gpt4_beta` | −1.926 | 0.824 | 0.019 | [−3.54, −0.31] | 45,186 | 729 |
+| (3) Main DiD | `observed_exposure` | −2.243 | 0.921 | 0.015 | [−4.05, −0.44] | 44,403 | 716 |
+| (4) + rate sensitivity | `observed_exposure` | −2.426 | 0.889 | 0.006 | [−4.17, −0.68] | ~44,100 | ~712 |
 
-### 2026-03-26
-- **Add more controls** — specifically interest rates (e.g., federal funds rate or 10-year Treasury) as a macro control
-- **Interest rate exposure by job** — construct a measure of how sensitive each occupation's hiring is to interest rates, and include it as an additional control/heterogeneity dimension
-- Motivation: interest rates rose sharply in 2022–2023 alongside ChatGPT launch; need to disentangle AI effect from rate-driven hiring slowdowns
+**Key findings:**
+- Entry-level postings fell 2.4× harder than senior in software developer postings (56% vs 81% of Oct 2022 level)
+- Overall entry-level postings have not recovered; only 11+ YOE has grown
+- Decline concentrated in automating occupations; augmenting occupations show different pattern
+- Rate control increases β magnitude — AI-exposed occupations are less rate-sensitive (r = 0.047)
+- Demand shock control leaves β unchanged (−1.729 → −1.732) — AI effect is distinct
+
+## Submissions (May 2026)
+
+- **Final Submission** (Canvas, 10 pts): `writeup/paper_draft_final_v2.html`
+- **Reproducibility Materials** (Canvas, 5 pts): `https://github.com/khaliunbattogtokh/Capstone-project`
 
 ## Environment Setup
 
-``` bash
+```bash
 export SNOWFLAKE_USER=your_username
 export SNOWFLAKE_PASSWORD=your_password
 ```
 
-Required packages: `pandas`, `numpy`, `matplotlib`, `seaborn`, `statsmodels`, `snowflake-connector-python`, `openpyxl`, `xlsxwriter`, `pyreadstat`
+Required packages: `pandas`, `numpy`, `matplotlib`, `seaborn`, `statsmodels`, `snowflake-connector-python`, `openpyxl`
