@@ -10,18 +10,23 @@ Did AI (specifically GPT-4 / ChatGPT) reduce entry-level hiring in highly AI-exp
 ECON696/
 ├── Code/
 │   ├── ai_comments.ipynb              # PRIMARY notebook — full end-to-end pipeline
-│   ├── Anthropic_exposure_index.ipynb # Anthropic observed_exposure measure construction
+│   ├── postings_jolts.ipynb           # Robustness controls: JOLTS, demand shocks
+│   ├── Anthropic_exposure_index.ipynb # Anthropic observed_exposure measure construction (untracked)
 │   └── archive/
 │       ├── AI_exposure_occs.ipynb     # OLD — 3 known bugs, stale results, do not use
 │       ├── AI_exposure_by_job_sep12.ipynb
 │       └── AI exposure by job, occ.ipynb
-├── fig/                               # All output figures (PNGs)
+├── fig/                               # All output figures (PNGs) — tracked on GitHub
+├── slide_figures/                     # Figures used in slides (local copy, also in fig/)
 ├── Output/
 │   └── ai_exposed_occs.xlsx
-├── updated code/
-│   ├── postings_jolts.ipynb           # Robustness controls: JOLTS, demand shocks
+├── updated code/                      # Local only — not tracked on GitHub
+│   ├── postings_jolts.ipynb           # (duplicate kept locally)
+│   ├── section4_regression.ipynb
 │   └── data/
 │       └── national_M20XX_dl.xlsx     # BLS OEWS national employment & wages
+├── arman research/                    # Local only — not tracked
+│   └── postings_jolts.ipynb
 ├── papers/                            # Reference papers
 ├── writeup/
 │   ├── paper_draft_final_v2.qmd       # Final paper (Quarto)
