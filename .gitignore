@@ -21,6 +21,10 @@ venv/
 *.xlsx
 *.xls
 
+# Exceptions — small reference CSVs needed for reproducibility
+!ai_exposure.csv
+!occupation_automation_augmentation_data.csv
+
 # PDF outputs (generated files)
 Output/
 
